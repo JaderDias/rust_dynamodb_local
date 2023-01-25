@@ -1,10 +1,7 @@
+use aws_sdk_dynamodb::error::{GetItemError, PutItemError};
 use aws_sdk_dynamodb::model::AttributeValue;
-use aws_sdk_dynamodb::Client;
 use aws_sdk_dynamodb::types::SdkError;
-use aws_sdk_dynamodb::error::{
-    GetItemError,
-    PutItemError,
-};
+use aws_sdk_dynamodb::Client;
 
 pub const PARTITION_KEY_NAME: &str = "partition";
 
@@ -14,19 +11,24 @@ pub type PutItemResult = Result<aws_sdk_dynamodb::output::PutItemOutput, SdkErro
 pub async fn get_item(
     client: &Client,
     dynamodb_table_name: &str,
-    partition_key_value: &str,
+    partition: &str,
 ) -> GetItemResult {
-    let value = AttributeValue::S(partition_key_value.to_owned());
-    client.get_item().table_name(dynamodb_table_name).key(PARTITION_KEY_NAME, value).send().await
+    let value = AttributeValue::S(partition.to_owned());
+    client
+        .get_item()
+        .table_name(dynamodb_table_name)
+        .key(PARTITION_KEY_NAME, value)
+        .send()
+        .await
 }
 
 pub async fn put_item(
     client: &Client,
     dynamodb_table_name: &str,
-    partition_key_value: &str,
+    partition: &str,
     values: std::collections::HashMap<String, AttributeValue>,
 ) -> PutItemResult {
-    let value = AttributeValue::S(partition_key_value.to_owned());
+    let value = AttributeValue::S(partition.to_owned());
     let mut table = client
         .put_item()
         .table_name(dynamodb_table_name)
@@ -35,6 +37,17 @@ pub async fn put_item(
         table = table.item(key, value);
     }
     table.send().await
+}
+
+pub fn get_uuid() -> String {
+    match std::env::var("FIXED_UUID") {
+        Ok(uuid) => uuid,
+        Err(_) => {
+            let id = uuid::Uuid::new_v4();
+            let mut buffer: [u8; 32] = [b'!'; 32];
+            String::from(id.simple().encode_lower(&mut buffer))
+        }
+    }
 }
 
 pub async fn get_client() -> Client {
@@ -52,8 +65,7 @@ pub async fn get_client() -> Client {
 
 pub async fn get_local_client(local_dynamodb_url: String) -> Client {
     let config = aws_config::from_env().region("us-east-1").load().await;
-    let dynamodb_local_config = aws_sdk_dynamodb::config::Builder
-    ::from(&config)
+    let dynamodb_local_config = aws_sdk_dynamodb::config::Builder::from(&config)
         .endpoint_url(local_dynamodb_url)
         .build();
     return Client::from_conf(dynamodb_local_config);

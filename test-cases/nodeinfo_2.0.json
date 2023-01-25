@@ -69,7 +69,7 @@
       },
       "statusCode": 200
     },
-    "expected_body": {
+    "expected_body_json": {
       "openRegistrations": true,
       "protocols": [
         "activitypub"

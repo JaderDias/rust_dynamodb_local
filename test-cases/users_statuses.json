@@ -3,7 +3,7 @@
     "request": {
       "version": "2.0",
       "routeKey": "$default",
-      "rawPath": "/api/v1/statuses",
+      "rawPath": "/users/test_username/statuses/{}",
       "rawQueryString": "",
       "cookies": [],
       "headers": {},
@@ -37,8 +37,8 @@
         "domainName": "id.execute-api.us-east-1.amazonaws.com",
         "domainPrefix": "id",
         "http": {
-          "method": "POST",
-          "path": "/api/v1/statuses",
+          "method": "GET",
+          "path": "/users/test_username/statuses/{}",
           "protocol": "HTTP/1.1",
           "sourceIp": "192.0.2.1",
           "userAgent": "agent"
@@ -58,46 +58,23 @@
         "stageVariable2": "value2"
       }
     },
-    "request_body": {
-      "@context": [
-        "https://www.w3.org/ns/activitystreams",
-        {
-          "ostatus": "http://ostatus.org#",
-          "atomUri": "ostatus:atomUri",
-          "in_reply_to_atom_uri": "ostatus:in_reply_to_atom_uri",
-          "conversation": "ostatus:conversation",
-          "sensitive": "as:sensitive",
-          "Hashtag": "as:Hashtag",
-          "toot": "http://joinmastodon.org/ns#",
-          "Emoji": "toot:Emoji",
-          "focalPoint": {
-            "@container": "@list",
-            "@id": "toot:focalPoint"
-          }
-        }
-      ],
-      "id": "https://mastodon.social/users/admin/statuses/101005808819117231",
-      "type": "Note",
-      "summary": null,
-      "inReplyTo": null,
-      "published": "2019-04-28T20:58:40Z",
-      "to": [
-        "https://www.w3.org/ns/activitystreams#Public"
-      ],
-      "sensitive": false,
-      "in_reply_to_atom_uri": null,
-      "conversation": "tag:mastodon.social,2019-04-28:objectId=1754000:objectType=Conversation",
-      "content": "test_content",
-      "attachment": [],
-      "tag": []
-    },
     "expected_response": {
-      "body": "abcd4cd356b446f6ae4509d5b7004802",
       "cookies": [],
-      "headers": {},
+      "headers": {"content-type": "application/json"},
       "isBase64Encoded": false,
-      "multiValueHeaders": {},
+      "multiValueHeaders": {"content-type": "application/json"},
       "statusCode": 200
+    },
+    "expected_body_json": {
+      "@context": null,
+      "atomUri": null,
+      "content": "test_content",
+      "inReplyTo": null,
+      "inReplyToAtomUri": null,
+      "published": "2019-04-28T20:58:40Z",
+      "sensitive": false,
+      "summary": null,
+      "type": "Note"
     }
   }
 ]

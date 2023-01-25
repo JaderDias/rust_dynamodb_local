@@ -1,13 +1,12 @@
 version: '3.8'
 services:
   dynamodb-local:
-    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
+    command: "-jar DynamoDBLocal.jar -sharedDb -inMemory"
+    # image: "wernerwws/dynamodb-local-with-logging:latest"
     image: "amazon/dynamodb-local:latest"
     container_name: dynamodb-local
     ports:
       - "8000:8000"
-    volumes:
-      - "./docker/dynamodb:/home/dynamodblocal/data"
     working_dir: /home/dynamodblocal
   app-node:
     image: "amazon/aws-lambda-provided:al2"
@@ -25,8 +24,9 @@ services:
       AWS_ACCESS_KEY_ID: 'DUMMYIDEXAMPLE'
       AWS_SECRET_ACCESS_KEY: 'DUMMYEXAMPLEKEY'
       CUSTOM_DOMAIN: 'example.com'
-      DYNAMODB_TABLE: 'table-name'
-      LOCAL_DYNAMODB_URL: 'http://localhost:8000'
+      DYNAMODB_TABLE: 'table_name'
+      FIXED_UUID: 'abcd4cd356b446f6ae4509d5b7004802'
+      LOCAL_DYNAMODB_URL: 'http://dynamodb-local:8000'
       REGION: 'eu-west-1'
       RUST_BACKTRACE: 'full'
     command: function.handler

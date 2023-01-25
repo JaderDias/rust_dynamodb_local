@@ -1,29 +1,29 @@
 use aws_lambda_events::apigw::ApiGatewayV2httpRequest;
 use aws_lambda_events::apigw::ApiGatewayV2httpResponse;
-use serde::Deserialize;
-use serde_json::json;
-use std::fs::File;
-use std::collections::HashMap;
 use aws_lambda_events::encodings::Body;
 use aws_sdk_dynamodb::model::{
     AttributeDefinition, KeySchemaElement, KeyType, ProvisionedThroughput, ScalarAttributeType,
 };
+use serde::Deserialize;
+use serde_json::json;
+use std::fs::File;
 
 type TestCases = Vec<TestCase>;
+
+const DB_URL: &str = "http://localhost:8000";
+const TABLE_NAME: &str = "table_name";
 
 #[derive(Deserialize)]
 struct TestCase {
     request: ApiGatewayV2httpRequest,
     request_body: Option<Box<serde_json::value::RawValue>>,
     expected_response: ApiGatewayV2httpResponse,
-    expected_body: Option<serde_json::Value>,
-    expected_db_key: Option<String>,
-    expected_db_item: Option<HashMap<String, String>>,
+    expected_body_json: Option<serde_json::Value>,
 }
 
 #[tokio::main]
 async fn main() {
-    let db_client = rust_lambda::dynamodb::get_client().await;
+    let db_client = rust_lambda::dynamodb::get_local_client(DB_URL.to_owned()).await;
     create_table_if_not_exists(&db_client).await;
     let paths = std::fs::read_dir("./test-cases").unwrap();
 
@@ -52,73 +52,56 @@ async fn main() {
                 .unwrap();
             assert_eq!(res.status(), 200);
             let response_text = &res.text().await.unwrap();
-            let mut response: ApiGatewayV2httpResponse = serde_json::from_str(response_text)
-                .map_err(|e| panic!("error parsing response: {}, response: {}", e, response_text))
+            let mut response: ApiGatewayV2httpResponse = serde_json::from_str(&response_text)
+                .map_err(|e| panic!("error {} parsing response: {}", e, &response_text))
                 .unwrap();
-            assert_body_matches(&mut response, &test.expected_body);
+            assert_body_matches(&test, &mut response);
             assert_eq!(response, test.expected_response);
-            assert_db_item(&test, &db_client).await;
         }
     }
 }
 
-async fn assert_db_item(test: &TestCase, db_client: &aws_sdk_dynamodb::Client) {
-    match &test.expected_db_key {
-        Some(key) => {
-            let get_item_output = rust_lambda::dynamodb::get_item(
-                &db_client,
-                "table-name",
-                key.as_str(),
-            ).await.unwrap();
-            let expected_item = test.expected_db_item.as_ref().unwrap();
-            let actual_item = get_item_output.item().unwrap();
-            for (key, value) in &*actual_item {
-                match value {
-                    aws_sdk_dynamodb::model::AttributeValue::S(s) => {
-                        let expected_value = expected_item.get(key).unwrap();
-                        assert_eq!(s.to_owned(), *expected_value);
+fn assert_body_matches(test: &TestCase, actual: &mut ApiGatewayV2httpResponse) {
+    match &actual.body {
+        Some(actual_body) => match actual_body {
+            Body::Empty => {}
+            Body::Text(actual_body_text) => match &test.expected_response.body {
+                Some(expected_body) => match expected_body {
+                    Body::Text(expected_body_text) => {
+                        assert_eq!(actual_body_text, expected_body_text);
+                        return;
                     }
                     _ => {
+                        assert!(false)
+                    }
+                },
+                None => match &test.expected_body_json {
+                    Some(expected_body_value) => {
+                        let expected_body_json =
+                            serde_json::to_string(expected_body_value).unwrap();
+                        assert_eq!(actual_body_text, &expected_body_json);
+                        actual.body = None;
+                        return;
+                    }
+                    None => {
                         assert!(false);
                     }
-                }
+                },
+            },
+            Body::Binary(_) => {
+                assert!(false)
             }
-        }
+        },
         None => {}
     }
-}
 
-fn assert_body_matches(actual: &mut ApiGatewayV2httpResponse, expected: &Option<serde_json::Value>) {
-    match &actual.body {
-        Some(b) => {
-            match b {
-                Body::Empty => {
-                    assert!(expected.is_none())
-                }
-                Body::Text(actual_body) => {
-                    match actual_body.as_str() {
-                        "" =>
-                            assert!(expected.is_none()),
-                        _ => {
-                            let expected_body = serde_json::to_string(&expected).unwrap();
-                            assert_eq!(actual_body, &expected_body);
-                            actual.body = None;
-                        }
-                    }
-                }
-                Body::Binary(_) => {
-                    assert!(false)
-                }
-            }
-        }
-        None => {
-            assert!(expected.is_none())
-        }
-    }
+    assert!(test.expected_response.body.is_none());
+    assert!(test.expected_body_json.is_none());
 }
 
 async fn table_exists(client: &aws_sdk_dynamodb::Client, table: &str) -> bool {
     let table_list = client.list_tables().send().await.unwrap();
+    println!("tables {:?}", table_list);
     table_list
         .table_names()
         .as_ref()
@@ -127,8 +110,7 @@ async fn table_exists(client: &aws_sdk_dynamodb::Client, table: &str) -> bool {
 }
 
 async fn create_table_if_not_exists(client: &aws_sdk_dynamodb::Client) {
-    let table_name = "table-name";
-    if table_exists(client, table_name).await {
+    if table_exists(client, TABLE_NAME).await {
         return;
     }
 
@@ -151,7 +133,7 @@ async fn create_table_if_not_exists(client: &aws_sdk_dynamodb::Client) {
 
     client
         .create_table()
-        .table_name(table_name)
+        .table_name(TABLE_NAME)
         .key_schema(ks)
         .attribute_definitions(ad)
         .provisioned_throughput(pt)
