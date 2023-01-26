@@ -19,7 +19,7 @@ services:
     links:
       - "dynamodb-local"
     volumes:
-      - ./dist/x86_64-unknown-linux-musl:/var/runtime
+      - ./dist/x86_64:/var/runtime
     environment:
       AWS_ACCESS_KEY_ID: 'DUMMYIDEXAMPLE'
       AWS_SECRET_ACCESS_KEY: 'DUMMYEXAMPLEKEY'
