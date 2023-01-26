@@ -1,0 +1,32 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+    - name: Build
+      run: |
+        mkdir -p target/release
+        docker-compose -f docker/build-docker-compose.yml up --build
+    - name: Run instance
+      run: |
+        mkdir -p dist/amazonlinux2
+        cp target/release/rust_lambda dist/amazonlinux2/bootstrap
+        docker-compose -f docker/test-docker-compose.yml up --build -d
+    - name: Run tests
+      run: |
+        cargo run --example test

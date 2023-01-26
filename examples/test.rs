@@ -16,7 +16,7 @@ const TABLE_NAME: &str = "table_name";
 #[derive(Deserialize)]
 struct TestCase {
     request: ApiGatewayV2httpRequest,
-    request_body: Option<Box<serde_json::value::RawValue>>,
+    request_body_json: Option<serde_json::Value>,
     expected_response: ApiGatewayV2httpResponse,
     expected_body_json: Option<serde_json::Value>,
 }
@@ -36,9 +36,9 @@ async fn main() {
         let mut file_deserializer = serde_json::Deserializer::from_reader(file);
         let test_cases = TestCases::deserialize(&mut file_deserializer).unwrap();
         for mut test in test_cases {
-            match &test.request_body {
+            match &test.request_body_json {
                 Some(body) => {
-                    test.request.body = Some(body.get().to_owned());
+                    test.request.body = Some(serde_json::to_string(body).unwrap());
                 }
                 None => {}
             }
