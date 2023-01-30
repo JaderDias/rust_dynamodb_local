@@ -3,13 +3,12 @@ services:
   amazonlinux2:
     container_name: amazonlinux2
     build:
-      context: ./
-      dockerfile: amazonlinux2.Dockerfile
+      context: .
     volumes:
-      - ../:/volume
+      - ../../:/volume
     command:
       - /bin/sh
       - -c
       - |
-        /root/.cargo/bin/cargo build --release
+        /root/.cargo/bin/cargo build --release && \
         /bin/chmod -R go=u /volume/target/release

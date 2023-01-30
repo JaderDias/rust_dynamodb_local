@@ -72,7 +72,7 @@ pub async fn handler(event: Request) -> Result<Response<Body>, Error> {
                 .map_err(Box::new)?;
             Ok(resp)
         }
-        "/users/test_username/statuses/{}" => {
+        "/users/test_username/statuses/abcdef1234567890abcdef1234567890" => {
             let partition = get_uuid();
             let get_item_output =
                 get_item(&dynamodb_client, table_name.as_str(), partition.as_str())
