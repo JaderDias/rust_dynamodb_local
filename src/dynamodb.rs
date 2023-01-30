@@ -64,12 +64,9 @@ pub async fn get_client() -> Client {
 }
 
 pub async fn get_local_client(local_dynamodb_url: String) -> Client {
-    std::env::set_var("AWS_ACCESS_KEY_ID",  "DUMMYIDEXAMPLE" );
-    std::env::set_var("AWS_SECRET_ACCESS_KEY",  "DUMMYEXAMPLEKEY" );
-    let config = aws_config::from_env()
-        .region("us-east-1")
-        .load()
-        .await;
+    std::env::set_var("AWS_ACCESS_KEY_ID", "DUMMYIDEXAMPLE");
+    std::env::set_var("AWS_SECRET_ACCESS_KEY", "DUMMYEXAMPLEKEY");
+    let config = aws_config::from_env().region("us-east-1").load().await;
     let dynamodb_local_config = aws_sdk_dynamodb::config::Builder::from(&config)
         .endpoint_url(local_dynamodb_url)
         .build();
