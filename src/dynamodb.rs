@@ -70,5 +70,5 @@ pub async fn get_local_client(local_dynamodb_url: String) -> Client {
     let dynamodb_local_config = aws_sdk_dynamodb::config::Builder::from(&config)
         .endpoint_url(local_dynamodb_url)
         .build();
-    return Client::from_conf(dynamodb_local_config);
+    Client::from_conf(dynamodb_local_config)
 }
