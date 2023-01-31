@@ -8,6 +8,9 @@ pub const PARTITION_KEY_NAME: &str = "partition";
 pub type GetItemResult = Result<aws_sdk_dynamodb::output::GetItemOutput, SdkError<GetItemError>>;
 pub type PutItemResult = Result<aws_sdk_dynamodb::output::PutItemOutput, SdkError<PutItemError>>;
 
+/// # Errors
+///
+/// Will return `Err` if a connection to the database is no properly established.
 pub async fn get_item(
     client: &Client,
     dynamodb_table_name: &str,
@@ -22,11 +25,14 @@ pub async fn get_item(
         .await
 }
 
-pub async fn put_item(
+/// # Errors
+///
+/// Will return `Err` if a connection to the database is no properly established.
+pub async fn put_item<S: std::hash::BuildHasher>(
     client: &Client,
     dynamodb_table_name: &str,
     partition: &str,
-    values: std::collections::HashMap<String, AttributeValue>,
+    values: std::collections::HashMap<String, AttributeValue, S>,
 ) -> PutItemResult {
     let value = AttributeValue::S(partition.to_owned());
     let mut table = client
@@ -39,27 +45,24 @@ pub async fn put_item(
     table.send().await
 }
 
+#[must_use]
 pub fn get_uuid() -> String {
-    match std::env::var("FIXED_UUID") {
-        Ok(uuid) => uuid,
-        Err(_) => {
-            let id = uuid::Uuid::new_v4();
-            let mut buffer: [u8; 32] = [b'!'; 32];
-            String::from(id.simple().encode_lower(&mut buffer))
-        }
+    if let Ok(uuid) = std::env::var("FIXED_UUID") {
+        uuid
+    } else {
+        let id = uuid::Uuid::new_v4();
+        let mut buffer: [u8; 32] = [b'!'; 32];
+        String::from(id.simple().encode_lower(&mut buffer))
     }
 }
 
 pub async fn get_client() -> Client {
-    match std::env::var("LOCAL_DYNAMODB_URL") {
-        Ok(url) => {
-            println!("Using local dynamodb at {}", url);
-            get_local_client(url).await
-        }
-        Err(_) => {
-            let config = aws_config::load_from_env().await;
-            Client::new(&config)
-        }
+    if let Ok(url) = std::env::var("LOCAL_DYNAMODB_URL") {
+        println!("Using local dynamodb at {}", url);
+        get_local_client(url).await
+    } else {
+        let config = aws_config::load_from_env().await;
+        Client::new(&config)
     }
 }
 

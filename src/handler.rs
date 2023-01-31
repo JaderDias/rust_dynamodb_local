@@ -14,7 +14,7 @@ fn bad_request() -> Result<Response<Body>, Error> {
 /// This is the main body for the function.
 /// Write your code inside it.
 /// There are some code examples in the following URLs:
-/// - https://github.com/awslabs/aws-lambda-rust-runtime/tree/main/examples
+/// - <https://github.com/awslabs/aws-lambda-rust-runtime/tree/main/examples>
 pub async fn handler(event: Request) -> Result<Response<Body>, Error> {
     let table_name = match std::env::var("DYNAMODB_TABLE") {
         Ok(t) => t,
