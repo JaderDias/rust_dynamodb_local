@@ -5,7 +5,7 @@ use aws_sdk_dynamodb::model::{
     AttributeDefinition, KeySchemaElement, KeyType, ProvisionedThroughput, ScalarAttributeType,
 };
 use serde::Deserialize;
-use serde_json::json;
+use serde_json::{json, Value};
 use std::fs::File;
 
 type TestCases = Vec<TestCase>;
@@ -16,9 +16,9 @@ const TABLE_NAME: &str = "table_name";
 #[derive(Deserialize)]
 struct TestCase {
     request: ApiGatewayV2httpRequest,
-    request_body_json: Option<serde_json::Value>,
+    request_body_json: Option<Value>,
     expected_response: ApiGatewayV2httpResponse,
-    expected_body_json: Option<serde_json::Value>,
+    expected_body_json: Option<Value>,
 }
 
 #[tokio::main]
@@ -43,56 +43,54 @@ async fn main() {
                 None => {}
             }
 
-            let request = json!(test.request);
-            let res = http_client
-                .post("http://localhost:8080/2015-03-31/functions/function/invocations")
-                .body(request.to_string())
-                .send()
-                .await
-                .unwrap();
-            assert_eq!(res.status(), 200);
-            let response_text = &res.text().await.unwrap();
-            let mut response: ApiGatewayV2httpResponse = serde_json::from_str(&response_text)
-                .map_err(|e| panic!("error {} parsing response: {}", e, &response_text))
-                .unwrap();
-            assert_body_matches(&test, &mut response);
-            assert_eq!(response, test.expected_response);
+            let request = &test.request;
+            let actual_response: reqwest::Response;
+            let url = format!(
+                "http://localhost:8080{}",
+                &request.raw_path.as_ref().unwrap()
+            );
+            if &request.request_context.http.method == "POST" {
+                let request_body = json!(&test.request_body_json);
+                actual_response = http_client
+                    .post(url)
+                    .body(request_body.to_string())
+                    .headers(request.headers.to_owned())
+                    .send()
+                    .await
+                    .unwrap();
+            } else {
+                actual_response = http_client.get(url).send().await.unwrap();
+            }
+            assert_eq!(actual_response.status(), test.expected_response.status_code as u16);
+            assert_eq!(actual_response.headers().get("content-type"), test.expected_response.headers.get("content-type"));
+            let actual_body_text = &actual_response.text().await.unwrap();
+            assert_body_matches(&test, actual_body_text);
         }
     }
 }
 
-fn assert_body_matches(test: &TestCase, actual: &mut ApiGatewayV2httpResponse) {
-    match &actual.body {
-        Some(actual_body) => match actual_body {
-            Body::Empty => {}
-            Body::Text(actual_body_text) => match &test.expected_response.body {
-                Some(expected_body) => match expected_body {
-                    Body::Text(expected_body_text) => {
-                        assert_eq!(actual_body_text, expected_body_text);
-                        return;
-                    }
-                    _ => {
-                        assert!(false)
-                    }
-                },
-                None => match &test.expected_body_json {
-                    Some(expected_body_value) => {
-                        let expected_body_json =
-                            serde_json::to_string(expected_body_value).unwrap();
-                        assert_eq!(actual_body_text, &expected_body_json);
-                        actual.body = None;
-                        return;
-                    }
-                    None => {
-                        assert!(false);
-                    }
-                },
-            },
-            Body::Binary(_) => {
+fn assert_body_matches(test: &TestCase, actual_body_text: &String) {
+    match &test.expected_response.body {
+        Some(expected_body) => match expected_body {
+            Body::Text(expected_body_text) => {
+                assert_eq!(actual_body_text, expected_body_text);
+                return;
+            }
+            _ => {
                 assert!(false)
             }
         },
-        None => {}
+        None => match &test.expected_body_json {
+            Some(expected_body_value) => {
+                let actual_body_value: Value =
+                    serde_json::from_str(actual_body_text).unwrap();
+                assert_eq!(&actual_body_value, expected_body_value);
+                return;
+            }
+            None => {
+                assert!(false);
+            }
+        },
     }
 
     assert!(test.expected_response.body.is_none());

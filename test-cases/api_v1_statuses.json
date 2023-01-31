@@ -94,7 +94,7 @@
     "expected_response": {
       "body": "abcdef1234567890abcdef1234567890",
       "cookies": [],
-      "headers": {},
+      "headers": {"content-type": "text/plain; charset=utf-8"},
       "isBase64Encoded": false,
       "multiValueHeaders": {},
       "statusCode": 200

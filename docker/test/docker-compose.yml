@@ -8,21 +8,3 @@ services:
     ports:
       - "8000:8000"
     working_dir: /home/dynamodblocal
-  rust-lambda:
-    container_name: aws-lambda-provided
-    image: "amazon/aws-lambda-provided:al2"
-    ports:
-      - "8080:8080"
-    depends_on:
-      - "dynamodb-local"
-    links:
-      - "dynamodb-local"
-    volumes:
-      - ../../dist/amazonlinux2:/var/runtime
-    environment:
-      CUSTOM_DOMAIN: 'example.com'
-      DYNAMODB_TABLE: 'table_name'
-      FIXED_UUID: 'abcdef1234567890abcdef1234567890'
-      LOCAL_DYNAMODB_URL: 'http://dynamodb-local:8000'
-      REGION: 'eu-west-1'
-    command: function.handler

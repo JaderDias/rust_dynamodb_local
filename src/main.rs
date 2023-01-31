@@ -1,11 +1,11 @@
-use lambda_http::{run, service_fn, Error};
+use lambda_web::{is_running_on_lambda, launch_rocket_on_lambda, LambdaError};
 
 mod activitypub;
 mod dynamodb;
-mod handler;
+mod routes;
 
-#[tokio::main]
-async fn main() -> Result<(), Error> {
+#[rocket::main]
+async fn main() -> Result<(), LambdaError> {
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::INFO)
         // disable printing the name of the module in every log line.
@@ -14,5 +14,21 @@ async fn main() -> Result<(), Error> {
         .without_time()
         .init();
 
-    run(service_fn(handler::handler)).await
+    let rocket = rocket::build()
+        .mount("/", routes::api::routes())
+        .mount("/", routes::nodeinfo::routes())
+        .mount("/", routes::users::routes())
+        .manage(dynamodb::DbSettings {
+            client: dynamodb::get_client().await,
+            table_name: std::env::var("DYNAMODB_TABLE").unwrap(),
+        });
+
+    if is_running_on_lambda() {
+        // Launch on AWS Lambda
+        return launch_rocket_on_lambda(rocket).await;
+    }
+
+    // Launch local server
+    rocket.launch().await?;
+    Ok(())
 }

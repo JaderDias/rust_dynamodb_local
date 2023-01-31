@@ -2,9 +2,9 @@ name: Rust
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "**" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "**" ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -19,14 +19,16 @@ jobs:
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Build
+      env:
+        CUSTOM_DOMAIN: example.com
+        DYNAMODB_TABLE: table_name
+        FIXED_UUID: abcdef1234567890abcdef1234567890
+        LOCAL_DYNAMODB_URL: http://localhost:8000
+        REGION: eu-west-1
       run: |
-        mkdir -p target/release
-        docker-compose -f docker/build/docker-compose.yml up --build --exit-code-from amazonlinux2
-    - name: Run instance
-      run: |
-        mkdir -p dist/amazonlinux2
-        cp target/release/rust_lambda dist/amazonlinux2/bootstrap
-        docker-compose -f docker/test/docker-compose.yml up --build -d
+        cargo build
+        cargo run &
+    - name: Run database
+      run: docker-compose -f docker/test/docker-compose.yml up --build -d
     - name: Run tests
-      run: |
-        cargo run --example test
+      run: cargo run --example test

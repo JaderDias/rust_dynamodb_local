@@ -1,6 +1,8 @@
 use super::context::StringOrContext;
 use serde::{Deserialize, Serialize};
 
+// TODO: use activitystreams = "0.6.2"
+
 #[derive(Serialize, Deserialize)]
 pub struct Object {
     #[serde(skip_serializing_if = "Option::is_none")]
