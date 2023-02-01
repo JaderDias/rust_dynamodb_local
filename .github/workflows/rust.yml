@@ -19,15 +19,15 @@ jobs:
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
     - name: Build
+      run: cargo build --all-targets
+    - name: Run
       env:
         CUSTOM_DOMAIN: example.com
         DYNAMODB_TABLE: table_name
         FIXED_UUID: abcdef1234567890abcdef1234567890
         LOCAL_DYNAMODB_URL: http://localhost:8000
         REGION: eu-west-1
-      run: |
-        cargo build --all-targets
-        cargo run &
+      run: cargo run &
     - name: Run database
       run: docker-compose -f docker/test/docker-compose.yml up --build -d
     - name: Run tests
