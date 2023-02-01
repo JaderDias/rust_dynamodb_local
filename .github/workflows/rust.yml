@@ -26,7 +26,7 @@ jobs:
         LOCAL_DYNAMODB_URL: http://localhost:8000
         REGION: eu-west-1
       run: |
-        cargo build
+        cargo build --all-targets
         cargo run &
     - name: Run database
       run: docker-compose -f docker/test/docker-compose.yml up --build -d
@@ -38,5 +38,6 @@ jobs:
       run: cargo clippy --all -- -W clippy::all -W clippy::pedantic
     - name: Check unused dependencies
       run: |
+        rustup install nightly-x86_64-unknown-linux-gnu
         cargo install cargo-udeps --locked
         cargo +nightly udeps --all-targets

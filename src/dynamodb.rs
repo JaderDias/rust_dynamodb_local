@@ -63,7 +63,7 @@ pub fn get_uuid() -> String {
 
 pub async fn get_client() -> Client {
     if let Ok(url) = std::env::var("LOCAL_DYNAMODB_URL") {
-        println!("Using local dynamodb at {}", url);
+        println!("Using local dynamodb at {url}");
         get_local_client(url).await
     } else {
         let config = aws_config::load_from_env().await;
