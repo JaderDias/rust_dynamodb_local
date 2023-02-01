@@ -29,6 +29,6 @@ async fn main() -> Result<(), LambdaError> {
     }
 
     // Launch local server
-    rocket.launch().await?;
+    let _ = rocket.launch().await?;
     Ok(())
 }
