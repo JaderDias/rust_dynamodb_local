@@ -61,8 +61,14 @@ async fn main() {
             } else {
                 actual_response = http_client.get(url).send().await.unwrap();
             }
-            assert_eq!(actual_response.status(), test.expected_response.status_code as u16);
-            assert_eq!(actual_response.headers().get("content-type"), test.expected_response.headers.get("content-type"));
+            assert_eq!(
+                actual_response.status(),
+                test.expected_response.status_code as u16
+            );
+            assert_eq!(
+                actual_response.headers().get("content-type"),
+                test.expected_response.headers.get("content-type")
+            );
             let actual_body_text = &actual_response.text().await.unwrap();
             assert_body_matches(&test, actual_body_text);
         }
@@ -82,8 +88,7 @@ fn assert_body_matches(test: &TestCase, actual_body_text: &String) {
         },
         None => match &test.expected_body_json {
             Some(expected_body_value) => {
-                let actual_body_value: Value =
-                    serde_json::from_str(actual_body_text).unwrap();
+                let actual_body_value: Value = serde_json::from_str(actual_body_text).unwrap();
                 assert_eq!(&actual_body_value, expected_body_value);
                 return;
             }

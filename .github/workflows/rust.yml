@@ -32,3 +32,11 @@ jobs:
       run: docker-compose -f docker/test/docker-compose.yml up --build -d
     - name: Run tests
       run: cargo run --example test
+    - name: Format check
+      run: cargo fmt --all -- --check
+    - name: Static code analysis
+      run: cargo clippy --all -- -W clippy::all -W clippy::pedantic
+    - name: Check unused dependencies
+      run: |
+        cargo install cargo-udeps --locked
+        cargo +nightly udeps --all-targets
