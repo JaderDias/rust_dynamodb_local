@@ -52,13 +52,9 @@ pub async fn put_item<S: std::hash::BuildHasher>(
 
 #[must_use]
 pub fn get_uuid() -> String {
-    if let Ok(uuid) = std::env::var("FIXED_UUID") {
-        uuid
-    } else {
-        let id = uuid::Uuid::new_v4();
-        let mut buffer: [u8; 32] = [b'!'; 32];
-        String::from(id.simple().encode_lower(&mut buffer))
-    }
+    let id = uuid::Uuid::new_v4();
+    let mut buffer: [u8; 32] = [b'!'; 32];
+    String::from(id.simple().encode_lower(&mut buffer))
 }
 
 pub async fn get_client() -> Client {

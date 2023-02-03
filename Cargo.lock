@@ -1867,6 +1867,7 @@ dependencies = [
  "aws-sdk-dynamodb",
  "aws_lambda_events",
  "lambda-web",
+ "regex",
  "reqwest",
  "rocket",
  "serde",
