@@ -9,6 +9,8 @@ An example of how to test the integration of Rust with DynamoDb on your local de
 ## Requirements
 
 * Docker Desktop up and running
+* docker-compose
+* gcc
 * Rust toolchain 
 
 ### macOS with Apple Silicon additional requirements
@@ -22,6 +24,12 @@ brew install filosottile/musl-cross/musl-cross --with-x86_64
 
 ```bash
 ./run.sh
+```
+
+on another terminal
+
+```bash
+./run_test.sh
 ```
 
 ## Run tests as GitHub actions
