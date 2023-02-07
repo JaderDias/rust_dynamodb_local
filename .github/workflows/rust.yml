@@ -46,6 +46,8 @@ jobs:
       - uses: actions/checkout@v3
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
+      - name: Run database
+        run: docker-compose -f docker/test/docker-compose.yml up --build -d
       - run: cargo build --all-targets
       - name: Run
         env:
@@ -54,8 +56,6 @@ jobs:
           LOCAL_DYNAMODB_URL: http://localhost:8000
           REGION: eu-west-1
         run: cargo run &
-      - name: Run database
-        run: docker-compose -f docker/test/docker-compose.yml up --build -d
       - name: Run tests
         run: cargo run --example test http://localhost:8080
 
