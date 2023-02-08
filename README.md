@@ -8,12 +8,18 @@ An example of how to test the integration of Rust with DynamoDb on your local de
 
 ## Requirements
 
+### Development & testing
+
 * Docker Desktop up and running
 * docker-compose
 * gcc
-* Rust toolchain 
+* Rust toolchain
 
-### macOS with Apple Silicon additional requirements
+### additional deployment requirements
+
+* AWS Command Line Interface
+
+### additional macOS with Apple Silicon requirements
 
 * musl-cross with x86_64
 ```bash
