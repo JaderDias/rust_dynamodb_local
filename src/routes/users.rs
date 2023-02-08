@@ -2,12 +2,8 @@ use crate::activitypub::object::Object;
 use crate::dynamodb::DbSettings;
 use rocket::serde::json::Json;
 
-pub fn routes() -> Vec<rocket::Route> {
-    rocket::routes![user_statuses]
-}
-
 #[rocket::get("/users/<_username>/statuses/<status_id>")]
-pub async fn user_statuses(
+pub async fn statuses(
     _username: String,
     status_id: String,
     db_settings: &rocket::State<DbSettings>,

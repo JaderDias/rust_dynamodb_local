@@ -15,9 +15,7 @@ async fn main() -> Result<(), LambdaError> {
         .init();
 
     let rocket = rocket::build()
-        .mount("/", routes::api::routes())
-        .mount("/", routes::nodeinfo::routes())
-        .mount("/", routes::users::routes())
+        .mount("/", routes::routes())
         .manage(dynamodb::DbSettings {
             client: dynamodb::get_client().await,
             table_name: std::env::var("DYNAMODB_TABLE").unwrap(),

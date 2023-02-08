@@ -1,3 +1,7 @@
-pub mod api;
-pub mod nodeinfo;
-pub mod users;
+mod api;
+mod nodeinfo;
+mod users;
+
+pub fn routes() -> Vec<rocket::Route> {
+    rocket::routes![api::statuses, nodeinfo::handler, users::statuses]
+}
