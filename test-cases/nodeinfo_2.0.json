@@ -50,7 +50,6 @@
         "timeEpoch": 1583348638390
       },
       "pathParameters": {
-        "parameter1": "value1"
       },
       "isBase64Encoded": false,
       "stageVariables": {
