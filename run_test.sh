@@ -1,4 +1,7 @@
-cargo run --example test http://localhost:8080 \
+FUNCTION_NAME=$(aws --endpoint-url=http://localhost:4566  lambda list-functions | grep FunctionName | cut -d'"' -f4)
+URL="http://localhost:4566/2015-03-31/functions/${FUNCTION_NAME}/invocations"
+
+cargo run --example test "$URL" \
 && cargo fmt --all -- --check \
 && cargo clippy --all -- \
   -D clippy::all \

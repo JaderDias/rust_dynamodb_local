@@ -1,9 +1,6 @@
 use aws_lambda_events::apigw::ApiGatewayV2httpRequest;
 use aws_lambda_events::apigw::ApiGatewayV2httpResponse;
 use aws_lambda_events::encodings::Body;
-use aws_sdk_dynamodb::model::{
-    AttributeDefinition, KeySchemaElement, KeyType, ProvisionedThroughput, ScalarAttributeType,
-};
 use regex::Regex;
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -12,8 +9,6 @@ use std::fs::File;
 
 type TestCases = Vec<TestCase>;
 
-const DB_URL: &str = "http://localhost:8000";
-const TABLE_NAME: &str = "table_name";
 const UUID_PLACEHOLDER: &str = "abcdef1234567890abcdef1234567890";
 
 #[derive(Deserialize)]
@@ -28,10 +23,6 @@ struct TestCase {
 async fn main() {
     let args: Vec<String> = env::args().collect();
     let test_target_url = &args[1];
-    if test_target_url.contains("localhost") {
-        let db_client = rust_lambda::dynamodb::get_local_client(DB_URL.to_owned()).await;
-        create_table_if_not_exists(&db_client).await;
-    }
 
     let paths = std::fs::read_dir("./test-cases").unwrap();
 
@@ -53,41 +44,26 @@ async fn main() {
             }
 
             let request = &test.request;
-            let actual_response: reqwest::Response;
-            let mut url = format!("{test_target_url}{}", &request.raw_path.as_ref().unwrap());
-            if &request.request_context.http.method == "POST" {
-                println!("{} {}", &request.request_context.http.method, &url);
-                let request_body = json!(&test.request_body_json);
-                let body = request_body
-                    .to_string()
-                    .replace(UUID_PLACEHOLDER, last_uuid.as_str());
-                actual_response = http_client
-                    .post(url)
-                    .body(body)
-                    .headers(request.headers.to_owned())
-                    .send()
-                    .await
+            println!(
+                "{} {}",
+                &request.request_context.http.method,
+                request.raw_path.as_ref().unwrap()
+            );
+            let reqwest_response = http_client
+                .post(test_target_url)
+                .body(json!(request).to_string())
+                .send()
+                .await
+                .unwrap();
+            let actual_body_text = &reqwest_response.text().await.unwrap();
+            let mut actual_response: ApiGatewayV2httpResponse =
+                serde_json::from_str(&actual_body_text)
+                    .map_err(|e| panic!("error {} parsing response: {}", e, &actual_body_text))
                     .unwrap();
-            } else {
-                url = url.replace(UUID_PLACEHOLDER, last_uuid.as_str());
-                let query_string = &request.raw_query_string;
-                if query_string.is_some() {
-                    url = format!("{}?{}", url, query_string.as_ref().unwrap());
-                }
-                println!("{} {}", &request.request_context.http.method, &url);
-                actual_response = http_client.get(url).send().await.unwrap();
-            }
-            assert_eq!(
-                actual_response.status(),
-                test.expected_response.status_code as u16
-            );
-            assert_eq!(
-                actual_response.headers().get("content-type"),
-                test.expected_response.headers.get("content-type")
-            );
 
-            let actual_body_text = actual_response.text().await.unwrap();
             last_uuid = assert_body_matches_with_replacement(&test, &actual_body_text);
+
+            assert_eq!(actual_response, test.expected_response);
         }
     }
 }
@@ -131,47 +107,4 @@ fn assert_body_matches(test: &TestCase, actual_body_text: &String) {
 
     assert!(test.expected_response.body.is_none());
     assert!(test.expected_body_json.is_none());
-}
-
-async fn table_exists(client: &aws_sdk_dynamodb::Client, table: &str) -> bool {
-    let table_list = client.list_tables().send().await.unwrap();
-    println!("tables {table_list:?}");
-    table_list
-        .table_names()
-        .as_ref()
-        .unwrap()
-        .contains(&table.into())
-}
-
-async fn create_table_if_not_exists(client: &aws_sdk_dynamodb::Client) {
-    if table_exists(client, TABLE_NAME).await {
-        return;
-    }
-
-    let a_name: String = rust_lambda::dynamodb::PARTITION_KEY_NAME.to_owned();
-
-    let ad = AttributeDefinition::builder()
-        .attribute_name(&a_name)
-        .attribute_type(ScalarAttributeType::S)
-        .build();
-
-    let ks = KeySchemaElement::builder()
-        .attribute_name(&a_name)
-        .key_type(KeyType::Hash)
-        .build();
-
-    let pt = ProvisionedThroughput::builder()
-        .read_capacity_units(10)
-        .write_capacity_units(5)
-        .build();
-
-    client
-        .create_table()
-        .table_name(TABLE_NAME)
-        .key_schema(ks)
-        .attribute_definitions(ad)
-        .provisioned_throughput(pt)
-        .send()
-        .await
-        .unwrap();
 }
