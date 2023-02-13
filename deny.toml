@@ -13,9 +13,18 @@ allow = [
     "Apache-2.0",
     "Zlib",
     "ISC",
-    "BSD-3-Clause"
+    "BSD-3-Clause",
+    "MPL-2.0",
+    "LicenseRef-ring",
 ]
 default = "deny"
+
+[[licenses.clarify]]
+name = "ring"
+expression = "LicenseRef-ring"
+license-files = [
+    { path = "LICENSE", hash = 0xbd0eed23 },
+]
 
 [bans]
 multiple-versions = "warn"
