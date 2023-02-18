@@ -1,2 +1,10 @@
-DISABLE_LINTERS: SPELL_CSPELL
-RUST_CLIPPY_ARGUMENTS: --all-targets -- --warn clippy::all --warn clippy::pedantic
+APPLY_FIXES: all
+EXCLUDED_DIRECTORIES:
+  - .idea
+  - dist
+  - megalinter-reports
+  - target
+DISABLE_LINTERS:
+  - REPOSITORY_TRIVY
+  - RUST_CLIPPY
+  - SPELL_CSPELL
