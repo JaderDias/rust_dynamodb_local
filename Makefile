@@ -6,6 +6,7 @@ test: refresh_database
 		RUSTFLAGS="-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort" \
 		RUSTDOCFLAGS="-Cpanic=abort" \
 		cargo build --all-targets
+	cargo test
 	CUSTOM_DOMAIN=example.com \
 		DYNAMODB_TABLE=table_name \
 		LOCAL_DYNAMODB_URL=http://localhost:8000 \

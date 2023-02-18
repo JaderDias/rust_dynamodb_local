@@ -26,14 +26,16 @@ jobs:
           CARGO_INCREMENTAL: 0
           RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
           RUSTDOCFLAGS: "-Cpanic=abort"
-      - name: Run
+      - name: Run unit tests
+        run: cargo test
+      - name: Run service instance
         env:
           CUSTOM_DOMAIN: example.com
           DYNAMODB_TABLE: table_name
           LOCAL_DYNAMODB_URL: http://localhost:8000
           REGION: eu-west-1
         run: ./target/debug/rust_lambda &
-      - name: Integration tests
+      - name: Run integration tests
         run: ./target/debug/examples/test http://localhost:8080
         env:
           LOCAL_DYNAMODB_URL: "http://localhost:8000"
