@@ -24,6 +24,8 @@ jobs:
       - name: Run database
         run: docker-compose -f docker/test/docker-compose.yml up --build -d
       - run: cargo build --all-targets
+        env:
+          RUSTFLAGS: "-C instrument-coverage"
       - name: Run
         env:
           CUSTOM_DOMAIN: example.com
