@@ -20,8 +20,10 @@ jobs:
       - name: Run database
         run: docker-compose -f docker/test/docker-compose.yml up --build -d
       - run: cargo build
-        env:
-          RUSTFLAGS: "-Zprofile"
+        env: # required variables according to https://github.com/mozilla/grcov
+          CARGO_INCREMENTAL: 0
+          RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
+          RUSTDOCFLAGS: "-Cpanic=abort"
       - name: Run
         env:
           CUSTOM_DOMAIN: example.com
