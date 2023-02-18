@@ -8,7 +8,7 @@ run:
 		DYNAMODB_TABLE=table_name \
 		LOCAL_DYNAMODB_URL=http://localhost:8000 \
 		REGION=eu-west-1 \
-		cargo run
+		./target/debug/rust_lambda
 
 test: unit_test integration_test
 

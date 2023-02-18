@@ -13,20 +13,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      - run: rustup update nightly
+      - run: rustup default nightly
       - name: Cache dependencies
         uses: Swatinem/rust-cache@v2
       - name: Run database
         run: docker-compose -f docker/test/docker-compose.yml up --build -d
-      - run: cargo build --all-targets
+      - run: cargo build
         env:
-          RUSTFLAGS: "-C instrument-coverage"
+          RUSTFLAGS: "-Zprofile"
       - name: Run
         env:
           CUSTOM_DOMAIN: example.com
           DYNAMODB_TABLE: table_name
           LOCAL_DYNAMODB_URL: http://localhost:8000
           REGION: eu-west-1
-        run: cargo run &
+        run: ./target/debug/rust_lambda &
       - name: Run tests
         run: cargo run --example test http://localhost:8080
       - uses: actions-rs/grcov@v0.1.6
