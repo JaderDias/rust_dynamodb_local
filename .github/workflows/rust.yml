@@ -11,6 +11,14 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      # required variables according to https://github.com/mozilla/grcov
+      CARGO_INCREMENTAL: 0
+      RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
+      RUSTDOCFLAGS: "-Cpanic=abort"
+
+      # required by both the service instance and the integration tests
+      LOCAL_DYNAMODB_URL: http://localhost:8000
     steps:
       - uses: actions/checkout@v3
       - run: rustup update nightly
@@ -22,22 +30,15 @@ jobs:
       - name: Run database
         run: docker-compose -f docker/test/docker-compose.yml up --build -d
       - run: cargo build --all-targets
-        env: # required variables according to https://github.com/mozilla/grcov
-          CARGO_INCREMENTAL: 0
-          RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
-          RUSTDOCFLAGS: "-Cpanic=abort"
       - name: Run unit tests
         run: cargo test
       - name: Run service instance
         env:
           CUSTOM_DOMAIN: example.com
           DYNAMODB_TABLE: table_name
-          LOCAL_DYNAMODB_URL: http://localhost:8000
           REGION: eu-west-1
         run: ./target/debug/rust_lambda &
       - name: Run integration tests
         run: ./target/debug/examples/test http://localhost:8080
-        env:
-          LOCAL_DYNAMODB_URL: "http://localhost:8000"
       - uses: actions-rs/grcov@v0.1.6
       - uses: codecov/codecov-action@v3.1.1
