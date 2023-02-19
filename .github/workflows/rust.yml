@@ -11,14 +11,6 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      # required variables according to https://github.com/mozilla/grcov
-      CARGO_INCREMENTAL: 0
-      RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
-      RUSTDOCFLAGS: "-Cpanic=abort"
-
-      # required by both the service instance and the integration tests
-      LOCAL_DYNAMODB_URL: http://localhost:8000
     steps:
       - uses: actions/checkout@v3
       - run: rustup update nightly
@@ -27,27 +19,7 @@ jobs:
         with:
           prefix-key: "v1-rust"
           cache-targets: "false"
-      - name: Run database
-        run: docker-compose -f docker/test/docker-compose.yml up --build -d
-      - run: cargo build --all-targets
-      - name: Run unit tests
-        run: cargo test
-      - name: Run service instance
-        env:
-          CUSTOM_DOMAIN: example.com
-          DYNAMODB_TABLE: table_name
-          REGION: eu-west-1
-        run: ./target/debug/rust_lambda &
-      - name: Run integration tests
-        run: ./target/debug/examples/test http://localhost:8080
-      - run: cargo install grcov
-      - name: Generate coverage report
-        run: grcov .
-          -s .
-          --binary-path ./target/debug/
-          -t lcov
-          --branch
-          --ignore-not-existing 
-          -o ./target/debug/lcov.info
+      - run: make test
+      - run: make lcov
       - name: Upload coverage report to Codecov
         uses: codecov/codecov-action@v3.1.1

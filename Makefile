@@ -4,8 +4,11 @@
 	check \
 	clean \
 	clippy \
+	grcov \
+	html_coverage_report \
 	integration_test \
 	kill_service_running_in_background \
+	lcov \
 	nightly_toolchain \
 	refresh_database \
 	run_service_in_background \
@@ -33,12 +36,28 @@ clippy:
 		-W clippy::multiple_crate_versions \
 		-W clippy::future_not_send
 
+grcov:
+	cargo install grcov
+	grcov . \
+		-s . \
+		--binary-path ./target/debug/ \
+		-t $(TYPE_PARAM) \
+		--branch \
+		--ignore-not-existing \
+		-o ./target/debug/$(OUTPUT)
+
+html_coverage_report:
+	$(MAKE) grcov TYPE_PARAM=html OUTPUT=coverage
+
 integration_test:
 	LOCAL_DYNAMODB_URL=http://localhost:8000 \
 		./target/debug/examples/test http://localhost:8080
 
 kill_service_running_in_background:
 	pkill rust_lambda
+
+lcov:
+	$(MAKE) grcov TYPE_PARAM=lcov OUTPUT=lcov.info
 
 nightly_toolchain:
 	rustup update nightly
@@ -68,7 +87,6 @@ test: \
 	nightly_toolchain \
 	refresh_database \
 	build_with_profile \
-	unit_test \
 	run_service_in_background \
 	integration_test \
 	kill_service_running_in_background
