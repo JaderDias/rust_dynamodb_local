@@ -1,5 +1,5 @@
 [package]
-name = "rust_lambda"
+name = "web_service"
 description = "Example minimal serverless function in Rust using AWS infrastructure"
 repository = "https://github.com/JaderDias/rust_dynamodb_local"
 categories = ["webservice"]
@@ -20,12 +20,12 @@ license-file = "LICENSE"
 # and it will keep the alphabetic ordering for you.
 
 [dependencies]
-aws-config = "0.54.1"
-aws-sdk-dynamodb = "0.24.0"
+aws-config = "0.55.0"
+aws-sdk-dynamodb = "0.25"
 lambda-web = { version = "0.2.1", features = ["rocket05"] }
 rocket = { version = "0.5.0-rc.2", features = ["json"] }
 serde = { version = "1.0.152", features = ["derive"] }
-serde_dynamo = { version = "4.0.12", features = ["aws-sdk-dynamodb+0_24"] }
+serde_dynamo = { version = "4.2", features = ["aws-sdk-dynamodb+0_25"] }
 serde_json = { version = "1.0.93" }
 tracing = { version = "0.1", features = ["log"] }
 tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt"] }
@@ -38,5 +38,5 @@ regex = "1.7.1"
 reqwest = { version = "0.11.14", default-features = false, features = [
     "rustls-tls",
 ] }
-tokio = { version = "1", features = ["macros"] }
+tokio = { version = "1.27", features = ["macros"] }
 

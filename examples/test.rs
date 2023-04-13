@@ -1,7 +1,7 @@
 use aws_lambda_events::apigw::ApiGatewayV2httpRequest;
 use aws_lambda_events::apigw::ApiGatewayV2httpResponse;
 use aws_lambda_events::encodings::Body;
-use aws_sdk_dynamodb::model::{
+use aws_sdk_dynamodb::types::{
     AttributeDefinition, KeySchemaElement, KeyType, ProvisionedThroughput, ScalarAttributeType,
 };
 use regex::Regex;
@@ -13,7 +13,7 @@ use std::fs::File;
 type TestCases = Vec<TestCase>;
 
 const DB_URL: &str = "http://localhost:8000";
-const TABLE_NAME: &str = "table_name";
+const TABLE_NAME: &str = "LocalDynamodbTable";
 const UUID_PLACEHOLDER: &str = "abcdef1234567890abcdef1234567890";
 
 #[derive(Deserialize)]
@@ -29,7 +29,7 @@ async fn main() {
     let args: Vec<String> = env::args().collect();
     let test_target_url = &args[1];
     if test_target_url.contains("localhost") {
-        let db_client = rust_lambda::dynamodb::get_local_client(DB_URL.to_owned()).await;
+        let db_client = web_service::dynamodb::get_local_client(DB_URL.to_owned()).await;
         create_table_if_not_exists(&db_client).await;
     }
 
@@ -148,7 +148,7 @@ async fn create_table_if_not_exists(client: &aws_sdk_dynamodb::Client) {
         return;
     }
 
-    let a_name: String = rust_lambda::dynamodb::PARTITION_KEY_NAME.to_owned();
+    let a_name: String = web_service::dynamodb::PARTITION_KEY_NAME.to_owned();
 
     let ad = AttributeDefinition::builder()
         .attribute_name(&a_name)

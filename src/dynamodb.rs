@@ -1,12 +1,15 @@
-use aws_sdk_dynamodb::error::{GetItemError, PutItemError};
-use aws_sdk_dynamodb::model::AttributeValue;
-use aws_sdk_dynamodb::types::SdkError;
+use aws_sdk_dynamodb::error::SdkError;
+use aws_sdk_dynamodb::operation::get_item::{GetItemError, GetItemOutput};
+use aws_sdk_dynamodb::operation::put_item::{PutItemError, PutItemOutput};
+use aws_sdk_dynamodb::types::AttributeValue;
 use aws_sdk_dynamodb::Client;
+use std::collections::HashMap;
+use tracing::{event, Level};
 
 pub const PARTITION_KEY_NAME: &str = "partition";
 
-pub type GetItemResult = Result<aws_sdk_dynamodb::output::GetItemOutput, SdkError<GetItemError>>;
-pub type PutItemResult = Result<aws_sdk_dynamodb::output::PutItemOutput, SdkError<PutItemError>>;
+pub type GetItemResult = Result<GetItemOutput, SdkError<GetItemError>>;
+pub type PutItemResult = Result<PutItemOutput, SdkError<PutItemError>>;
 
 pub struct DbSettings {
     pub client: Client,
@@ -21,11 +24,14 @@ pub async fn get_item(
     dynamodb_table_name: &str,
     partition: &str,
 ) -> GetItemResult {
-    let value = AttributeValue::S(partition.to_owned());
+    event!(
+        Level::DEBUG,
+        "Get item: table {dynamodb_table_name} partition {partition}"
+    );
     client
         .get_item()
         .table_name(dynamodb_table_name)
-        .key(PARTITION_KEY_NAME, value)
+        .key(PARTITION_KEY_NAME, AttributeValue::S(partition.to_owned()))
         .send()
         .await
 }
@@ -33,20 +39,26 @@ pub async fn get_item(
 /// # Errors
 ///
 /// Will return `Err` if a connection to the database is no properly established.
-pub async fn put_item<S: std::hash::BuildHasher>(
+pub async fn put_item<S: std::hash::BuildHasher, T: serde::Serialize + std::marker::Send>(
     client: &Client,
     dynamodb_table_name: &str,
     partition: &str,
-    values: std::collections::HashMap<String, AttributeValue, S>,
-) -> PutItemResult {
-    let value = AttributeValue::S(partition.to_owned());
+    values: T,
+) -> PutItemResult
+where
+    HashMap<std::string::String, AttributeValue, S>: From<serde_dynamo::Item>,
+{
     let mut table = client
         .put_item()
         .table_name(dynamodb_table_name)
-        .item(PARTITION_KEY_NAME, value);
-    for (key, value) in values {
-        table = table.item(key, value);
+        .item(PARTITION_KEY_NAME, AttributeValue::S(partition.to_owned()));
+    {
+        let values: HashMap<String, AttributeValue, S> = serde_dynamo::to_item(values).unwrap();
+        for (key, value) in values {
+            table = table.item(key, value);
+        }
     }
+
     table.send().await
 }
 

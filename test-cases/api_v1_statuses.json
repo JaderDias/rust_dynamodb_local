@@ -1,5 +1,6 @@
 [
   {
+    "name": "user wants to create a status",
     "request": {
       "version": "2.0",
       "routeKey": "$default",
@@ -101,6 +102,7 @@
     }
   },
   {
+    "name": "federation wants to retrieve status just created",
     "request": {
       "version": "2.0",
       "routeKey": "$default",
@@ -169,12 +171,17 @@
     "expected_body_json": {
       "@context": null,
       "atomUri": null,
+      "attachment": [],
+      "conversation": "tag:mastodon.social,2019-04-28:objectId=1754000:objectType=Conversation",
       "content": "test_content",
+      "id": "https://mastodon.social/users/admin/statuses/101005808819117231", 
       "inReplyTo": null,
       "inReplyToAtomUri": null,
       "published": "2019-04-28T20:58:40Z",
       "sensitive": false,
       "summary": null,
+      "tag": [],
+      "to": ["https://www.w3.org/ns/activitystreams#Public"],
       "type": "Note"
     }
   }

@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 services:
   amazonlinux2:
     container_name: amazonlinux2
@@ -10,5 +10,5 @@ services:
       - /bin/sh
       - -c
       - |
-        /root/.cargo/bin/cargo build --release && \
+        /root/.cargo/bin/cargo build --release --workspace && \
         /bin/chmod -R go=u /volume/target/release
